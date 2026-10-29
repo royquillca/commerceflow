@@ -1,7 +1,7 @@
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/../../../lambdas/aurora_test/handler.py"
+  source_dir  = "${path.module}/../../../lambdas/aurora_test"
   output_path = "${path.module}/aurora_test.zip"
 }
 
@@ -33,8 +33,14 @@ resource "aws_iam_role_policy" "lambda_aurora" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["rds-data:ExecuteStatement"]
+        Effect = "Allow"
+        Action = [
+          "rds-data:ExecuteStatement",
+          "rds-data:BatchExecuteStatement",
+          "rds-data:BeginTransaction",
+          "rds-data:CommitTransaction",
+          "rds-data:RollbackTransaction"
+        ]
         Resource = aws_rds_cluster.aurora.arn
       },
       {
@@ -56,8 +62,8 @@ resource "aws_lambda_function" "aurora_test" {
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
-  timeout     = 30
-  memory_size = 128
+  timeout     = 180
+  memory_size = 256
 
   environment {
     variables = {

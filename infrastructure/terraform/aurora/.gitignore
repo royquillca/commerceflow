@@ -6,3 +6,4 @@ terraform.tfvars
 *.auto.tfvars
 crash.log
 .terraform.lock.hcl
+aurora_test.zip
