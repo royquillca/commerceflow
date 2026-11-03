@@ -35,5 +35,5 @@ output "aurora_security_group_id" {
 
 output "data_lake_bucket_name" {
   description = "S3 bucket used by CommerceFlow data lake."
-  value = aws_s3_bucket.data_lake.id
+  value       = aws_s3_bucket.data_lake.id
 }
