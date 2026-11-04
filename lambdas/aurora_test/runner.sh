@@ -9,7 +9,7 @@ aws lambda invoke \
 cat response.json
 
 
-# Load Customers and Products
+# Load Customers and Products to Aurora
 aws lambda invoke \
   --function-name commerceflow-dev-aurora-test \
   --region us-east-1 \
@@ -18,7 +18,7 @@ aws lambda invoke \
 
 cat response.json
 
-# Load Orders
+# Load Orders to Aurora
 aws lambda invoke \
   --function-name commerceflow-dev-aurora-test \
   --region us-east-1 \
@@ -26,3 +26,26 @@ aws lambda invoke \
   response.json
 
 cat response.json
+
+#  Load table from Aurora to Silver Layer
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"table_name"}'
+
+# - Example
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"customers"}'
+
+
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"customers"}'
+
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"products"}'
