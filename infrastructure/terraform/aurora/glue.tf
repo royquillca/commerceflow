@@ -30,6 +30,7 @@ resource "aws_iam_role_policy" "glue_data" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # S3 list buckets rule
       {
         Effect = "Allow"
         Action = [
@@ -37,6 +38,7 @@ resource "aws_iam_role_policy" "glue_data" {
         ]
         Resource = aws_s3_bucket.data_lake.arn
       },
+      # S3 get and put object rules
       {
         Effect = "Allow"
         Action = [
@@ -45,12 +47,37 @@ resource "aws_iam_role_policy" "glue_data" {
         ]
         Resource = "${aws_s3_bucket.data_lake.arn}/*"
       },
+      # Aurora Secrets Manager Rule
       {
         Effect = "Allow"
         Action = [
           "secretsmanager:GetSecretValue"
         ]
         Resource = aws_rds_cluster.aurora.master_user_secret[0].secret_arn
+      },
+      # Data Quality Rules
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:PublishDataQuality",
+          "glue:GetDataQualityResult",
+          "glue:PutDataQualityStatisticAnnotation",
+          "glue:PutDataQualityProfileAnnotation"
+        ]
+        Resource = "*"
+      },
+      # Cloudwatch metrics generation rule
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "cloudwatch:namespace" = "Glue Data Quality"
+          }
+        }
       }
     ]
   })
@@ -137,4 +164,54 @@ resource "aws_glue_job" "aurora_to_bronze" {
     aws_s3_object.aurora_to_s3_script,
     aws_vpc_endpoint.s3
   ]
+}
+
+
+# 6. ORDERS TO SILVER SCRIPT S3 BUCKET
+
+resource "aws_s3_object" "orders_to_silver_script" {
+  bucket = aws_s3_bucket.data_lake.id
+  key    = "scripts/orders_to_silver.py"
+
+  source = "${path.module}/../../../pipelines/batch/silver/orders_to_silver.py"
+
+  etag = filemd5(
+    "${path.module}/../../../pipelines/batch/silver/orders_to_silver.py"
+  )
+}
+
+# 7. GLUE JOB FROM BRONZE TO SILVER
+
+resource "aws_glue_job" "bronze_to_silver" {
+  name     = "${local.name_prefix}-bronze-to-silver"
+  role_arn = aws_iam_role.glue.arn
+
+  glue_version = "5.1"
+
+  worker_type       = "G.1X"
+  number_of_workers = 2
+
+  timeout = 10
+
+  command {
+    name            = "glueetl"
+    script_location = "s3://${aws_s3_bucket.data_lake.id}/${aws_s3_object.orders_to_silver_script.key}"
+    python_version  = "3"
+  }
+
+  default_arguments = {
+    "--job-language"                     = "python"
+    "--enable-continuous-cloudwatch-log" = "true"
+
+    "--BUCKET_NAME" = aws_s3_bucket.data_lake.id
+  }
+
+  depends_on = [
+    aws_s3_object.orders_to_silver_script,
+    aws_iam_role_policy.glue_data
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-bronze-to-silver"
+  }
 }
