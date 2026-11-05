@@ -193,8 +193,8 @@ resource "aws_s3_object" "orders_to_silver_script" {
 
 # 7. GLUE JOB FROM BRONZE TO SILVER
 
-resource "aws_glue_job" "bronze_to_silver" {
-  name     = "${local.name_prefix}-bronze-to-silver"
+resource "aws_glue_job" "orders_to_silver" {
+  name     = "${local.name_prefix}-orders-to-silver"
   role_arn = aws_iam_role.glue.arn
 
   glue_version = "5.1"
