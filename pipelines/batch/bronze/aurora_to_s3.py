@@ -1,5 +1,4 @@
 import sys
-import time
 
 from awsglue.context import GlueContext
 from awsglue.job import Job
@@ -16,9 +15,6 @@ SUPPORTED_TABLES = {
     "order_items",
 }
 
-MAX_CONNECTION_ATTEMPTS = 3
-RETRY_DELAY_SECONDS = 20
-
 
 def validate_source_table(table):
     """Allow only the OLTP tables expected by CommerceFlow."""
@@ -33,35 +29,19 @@ def validate_source_table(table):
 def read_aurora(glue_context, connection_name, table):
     """Read a PostgreSQL table through the existing Glue JDBC connection."""
 
-    for attempt in range(1, MAX_CONNECTION_ATTEMPTS + 1):
-        try:
-            print(
-                f"Reading public.{table} from Aurora "
-                f"(attempt {attempt}/{MAX_CONNECTION_ATTEMPTS})"
-            )
+    print(f"Reading public.{table} from Aurora")
 
-            dynamic_frame = glue_context.create_dynamic_frame.from_options(
-                connection_type="postgresql",
-                connection_options={
-                    "useConnectionProperties": "true",
-                    "connectionName": connection_name,
-                    "dbtable": f"public.{table}",
-                },
-                transformation_ctx=f"read_{table}",
-            )
+    dynamic_frame = glue_context.create_dynamic_frame.from_options(
+        connection_type="postgresql",
+        connection_options={
+            "useConnectionProperties": "true",
+            "connectionName": connection_name,
+            "dbtable": f"public.{table}",
+        },
+        transformation_ctx=f"read_{table}",
+    )
 
-            return dynamic_frame.toDF()
-
-        except Exception:
-            if attempt == MAX_CONNECTION_ATTEMPTS:
-                raise
-
-            print(
-                "Aurora connection failed. "
-                f"Retrying in {RETRY_DELAY_SECONDS} seconds..."
-            )
-
-            time.sleep(RETRY_DELAY_SECONDS)
+    return dynamic_frame.toDF()
 
 
 def add_ingestion_metadata(df):
@@ -108,7 +88,6 @@ def main():
     job.init(args["JOB_NAME"], args)
 
     table = args["SOURCE_TABLE"]
-
     validate_source_table(table)
 
     df = read_aurora(

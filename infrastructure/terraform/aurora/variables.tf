@@ -71,7 +71,7 @@ variable "max_capacity" {
 variable "auto_pause_seconds" {
   description = "Inactivity period before Aurora automatically pauses."
   type        = number
-  default     = 300
+  default     = 600
 }
 
 

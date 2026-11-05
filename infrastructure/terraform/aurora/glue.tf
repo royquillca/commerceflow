@@ -78,6 +78,17 @@ resource "aws_iam_role_policy" "glue_data" {
             "cloudwatch:namespace" = "Glue Data Quality"
           }
         }
+      },
+      # Load data from Aurora to S3 in Overwrite Mode
+      {
+        Sid    = "AllowBronzeSnapshotOverwrite"
+        Effect = "Allow"
+        Action = [
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.data_lake.arn}/bronze/*"
+        ]
       }
     ]
   })
@@ -155,9 +166,9 @@ resource "aws_glue_job" "aurora_to_bronze" {
   }
 
   execution_property {
-    max_concurrent_runs = 1
+    max_concurrent_runs = 5
   }
-
+  job_run_queuing_enabled = false
   depends_on = [
     aws_iam_role_policy_attachment.glue_service,
     aws_iam_role_policy.glue_data,

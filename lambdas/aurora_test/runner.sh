@@ -49,3 +49,37 @@ aws glue start-job-run \
   --job-name commerceflow-dev-aurora-to-bronze \
   --region us-east-1 \
   --arguments '{"--SOURCE_TABLE":"products"}'
+
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"order_items"}'
+
+aws glue start-job-run \
+  --job-name commerceflow-dev-aurora-to-bronze \
+  --region us-east-1 \
+  --arguments '{"--SOURCE_TABLE":"payments"}'
+
+
+# test de aurora
+aws lambda invoke \
+  --function-name commerceflow-dev-aurora-test \
+  --region us-east-1 \
+  --payload '{"action":"test"}' \
+  aurora-test-response.json
+
+cat aurora-test-response.json
+
+
+# estado de aurora
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/RDS \
+  --metric-name ServerlessDatabaseCapacity \
+  --dimensions Name=DBInstanceIdentifier,Value=commerceflow-dev-writer \
+  --start-time "$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%SZ)" \
+  --end-time "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --period 60 \
+  --statistics Average \
+  --region us-east-1 \
+  --query 'sort_by(Datapoints,&Timestamp)[].{Time:Timestamp,ACU:Average}' \
+  --output table
