@@ -87,7 +87,20 @@ resource "aws_iam_role_policy" "glue_data" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "${aws_s3_bucket.data_lake.arn}/bronze/*"
+          "${aws_s3_bucket.data_lake.arn}/bronze/*",
+          "${aws_s3_bucket.data_lake.arn}/silver/*",
+          "${aws_s3_bucket.data_lake.arn}/gold/*"
+        ]
+      },
+      # Write in mode overwirte file in quarantine bucket
+      {
+        Sid    = "AllowQuarantineOverwrite"
+        Effect = "Allow"
+        Action = [
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.data_lake.arn}/quarantine/*"
         ]
       }
     ]
