@@ -83,3 +83,73 @@ aws cloudwatch get-metric-statistics \
   --region us-east-1 \
   --query 'sort_by(Datapoints,&Timestamp)[].{Time:Timestamp,ACU:Average}' \
   --output table
+
+# Ejecucion del Step Functions
+aws stepfunctions list-state-machines \
+  --region us-east-1 \
+  --query "stateMachines[?name=='commerceflow-dev-batch-pipeline'].[name,stateMachineArn]" \
+  --output table
+
+aws stepfunctions start-execution \
+  --state-machine-arn "PEGA_AQUI_EL_ARN" \
+  --input '{}' \
+  --region us-east-1
+
+# obtener ARN de ejecución
+aws stepfunctions list-executions \
+  --state-machine-arn "ARN_DE_TU_STATE_MACHINE" \
+  --max-results 1 \
+  --region us-east-1 \
+  --query 'executions[0].executionArn' \
+  --output text
+
+# Verificar el estado
+aws stepfunctions describe-execution \
+  --execution-arn "PEGA_AQUI_EL_EXECUTION_ARN_DE_EJECUCION" \
+  --region us-east-1 \
+  --query '{Status:status,Output:output,Error:error,Cause:cause}'
+
+EXEC_ARN=$(aws stepfunctions list-executions \
+  --state-machine-arn "ARN_DE_TU_STATE_MACHINE" \
+  --region us-east-1 \
+  --max-results 1 \
+  --query 'executions[0].executionArn' \
+  --output text)
+
+aws stepfunctions describe-execution \
+  --execution-arn "$EXEC_ARN" \
+  --region us-east-1 \
+  --query '{Status:status,Output:output,Error:error,Cause:cause}'
+
+#########################################################################33
+
+aws stepfunctions list-executions \
+  --state-machine-arn "arn:aws:states:us-east-1:716616997513:stateMachine:commerceflow-dev-batch-pipeline" \
+  --max-results 1 \
+  --region us-east-1 \
+  --query 'executions[0].executionArn' \
+  --output text
+
+
+aws stepfunctions describe-execution \
+  --execution-arn "arn:aws:states:us-east-1:716616997513:stateMachine:commerceflow-dev-batch-pipeline" \
+  --region us-east-1 \
+  --query '{Status:status,Output:output,Error:error,Cause:cause}'
+
+aws stepfunctions start-execution \
+  --state-machine-arn "arn:aws:states:us-east-1:716616997513:stateMachine:commerceflow-dev-batch-pipeline" \
+  --input '{}' \
+  --region us-east-1
+
+
+EXEC_ARN=$(aws stepfunctions list-executions \
+  --state-machine-arn "arn:aws:states:us-east-1:716616997513:stateMachine:commerceflow-dev-batch-pipeline" \
+  --region us-east-1 \
+  --max-results 1 \
+  --query 'executions[0].executionArn' \
+  --output text)
+
+aws stepfunctions describe-execution \
+  --execution-arn "$EXEC_ARN" \
+  --region us-east-1 \
+  --query '{Status:status,Output:output,Error:error,Cause:cause}'
