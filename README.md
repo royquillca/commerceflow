@@ -43,8 +43,12 @@ CloudWatch: Glue job logs, Lambda logs, execution diagnostics.
 
 Step Functions uses Glue `startJobRun.sync`, so a stage waits for its Glue tasks to finish before advancing. The Map stages parallelize tables/jobs, not arbitrary steps within a job.
 
-> **[SCREENSHOT 01]** Step Functions execution graph showing Lambda → Bronze → Silver → Gold. Save as `docs/images/01-step-functions-execution.png`.
-> <!-- ![Successful end-to-end execution](docs/images/01-step-functions-execution.png) -->
+
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/01-step-functions-execution.png" alt="Successful end-to-end execution" width="428" height="539" />
+</div>
+
+
 
 ## 2. Data model and outputs
 
@@ -89,8 +93,21 @@ s3://<bucket>/
 - **Gold:** analytics-ready dimensions and facts. Gold is stored in S3 Parquet; **Redshift has not yet been added**.
 - **Write behavior:** Spark `mode("overwrite")` replaces the target folder. It requires `s3:DeleteObject` as well as read/write permissions and is not an atomic, incremental publish.
 
-> **[SCREENSHOT 02]** S3 bucket showing `bronze/`, `silver/`, `gold/`, and `quarantine/`. Save as `docs/images/02-s3-medallion.png`.
-> <!-- ![S3 Medallion layout](docs/images/02-s3-medallion.png) -->
+
+<p><b>Bronze Layer</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/02-bronze-layer.png" alt="Bronze Layer" />
+</div>
+
+<p><b>Silver Layer</b></p>
+<div style="display: flex; justify-content: center;">
+    <img src="docs/images/03-silver-layer.png" alt="Silver Layer" />
+</div>
+
+<p><b>Gold Layer</b></p>
+<div style="display: flex; justify-content: center;">
+    <img src="docs/images/04-gold-layer.png" alt="Gold Layer" />
+</div>
 
 ## 3. Repository structure
 
@@ -130,7 +147,7 @@ commerceflow/
 │           ├── eventbridge_scheduler.tf
 │           └── outputs.tf
 └── docs/
-    └── images/                 # Add your AWS Console screenshots here
+    └── images/     # Screenshots
 ```
 
 **Repository-specific note:** some iterations placed the Terraform root under `infrastructure/terraform/dev/` instead of `aurora/`; identify the actual directory containing `step_functions.tf`. Individual Silver/Gold scripts and Terraform files may be split differently in your checkout. The tree above describes responsibilities, **not a verified filesystem listing**. Use the checked-in `.tf` `source`/`script_location` references as the source of truth; do not rename scripts to match this illustration.
@@ -214,8 +231,16 @@ Check that Terraform creates or manages:
 - Glue JDBC connection, shared role, scripts and jobs.
 - Step Functions state machine and scheduler role/schedule.
 
-> **[SCREENSHOT 03]** Terraform successful apply and/or AWS RDS cluster `commerceflow-dev` (`available`). Save as `docs/images/03-terraform-aurora.png`.
-> <!-- ![Terraform and Aurora](docs/images/03-terraform-aurora.png) -->
+
+<p><b>Aurora Serverless V2 Database</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/05-aurora-serverless-v2.png" alt="Aurora serverless v2" />
+</div>
+
+<p><b>Aurora Serverless V2 Query</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/06-aurora-serverless-v2-query.png" alt="Aurora serverless v2" />
+</div>
 
 ### Step 3 — Verify AWS network and Aurora
 
@@ -290,8 +315,6 @@ done
 
 If counts differ from the sample dataset, Gold counts should be validated against **your actual source**, not the sample numbers above.
 
-> **[SCREENSHOT 04]** Aurora tables and verified row counts (SQL/Data API), without secrets. Save as `docs/images/04-aurora-table-counts.png`.
-> <!-- ![Aurora OLTP table counts](docs/images/04-aurora-table-counts.png) -->
 
 ### Step 5 — Verify Glue jobs and IAM
 
@@ -333,8 +356,11 @@ aws iam simulate-principal-policy \
 # Expect: allowed (identity policy simulation; still check SCPs/bucket policies).
 ```
 
-> **[SCREENSHOT 05]** Glue Jobs showing the Bronze job and successful Silver/Gold runs. Save as `docs/images/05-glue-job-runs.png`.
-> <!-- ![Glue job executions](docs/images/05-glue-job-runs.png) -->
+
+<p><b>AWS Glue jobs runs</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/07-glue-job-runs.png" alt="Glue Job Runs" />
+</div>
 
 ### Step 6 — Run the complete pipeline manually
 
@@ -416,8 +442,6 @@ PY
 
 Expected for the original synthetic dataset: `2,000 + 500 + 10,000 + 10,000 + 10,000 = 32,500` Gold rows. Also check column types, nulls/invalid data, and quarantine counts where applicable.
 
-> **[SCREENSHOT 06]** S3 Gold Parquet objects and/or terminal with five verified row counts. Save as `docs/images/06-gold-validation.png`.
-> <!-- ![Validated Gold datasets](docs/images/06-gold-validation.png) -->
 
 ### Step 8 — Enable daily scheduling (after validation)
 
@@ -450,8 +474,11 @@ Expected: `ENABLED`, `cron(5 20 * * ? *)`, `America/Lima`, target pointing to th
 
 **Operation:** disable the scheduler when the project is not in use; the current implementation does not implement cross-execution locking. EventBridge can deliver an invocation more than once, so downstream writes must not assume exactly-once scheduling.
 
-> **[SCREENSHOT 07]** EventBridge Scheduler details with cron, timezone, status and target. Save as `docs/images/07-eventbridge-scheduler.png`.
-> <!-- ![EventBridge Scheduler settings](docs/images/07-eventbridge-scheduler.png) -->
+
+<p><b>Event Bridge Scheduler</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/08-eventbridge-scheduler.png" alt="Event Bridge Scheduler" />
+</div>
 
 ## 6. Troubleshooting
 
@@ -494,8 +521,12 @@ aws stepfunctions list-executions \
 - Keep `force_destroy = false` for the data-lake bucket. **Do not run `terraform destroy` casually**: the same state manages Aurora, its database and S3 data.
 - Never expose AWS credentials, DB secrets, account-specific billing data or sensitive IDs in public screenshots.
 
-> **[SCREENSHOT 08]** Billing → Charges by service (redact account/payment identifiers). Save as `docs/images/08-aws-costs.png`.
-> <!-- ![AWS costs by service](docs/images/08-aws-costs.png) -->
+
+
+<p><b>Billing - Total charges</b></p>
+<div style="display: flex; justify-content: center;">
+  <img src="docs/images/09-billing.png" alt="Billing" />
+</div>
 
 ## 8. Scope, limitations, and next steps
 
@@ -511,22 +542,18 @@ aws stepfunctions list-executions \
 
 ## 9. Screenshot checklist
 
-Create `docs/images/`, capture the following from **your own AWS Console**, and replace the `[SCREENSHOT]` notes above with the corresponding Markdown image references:
+There are images within `docs/images/` and with the corresponding Markdown image references:
 
 1. `01-step-functions-execution.png` — successful Step Functions graph.
-2. `02-s3-medallion.png` — S3 prefix structure.
-3. `03-terraform-aurora.png` — infrastructure deployment / RDS cluster.
-4. `04-aurora-table-counts.png` — source table counts.
-5. `05-glue-job-runs.png` — successful Glue jobs.
-6. `06-gold-validation.png` — Gold objects and verified record counts.
-7. `07-eventbridge-scheduler.png` — daily 20:05, `America/Lima`.
-8. `08-aws-costs.png` — cost by service, redacted.
+2. `02-bronze-layer.png` — S3 prefix structure.
+3. `03-silver-layer.png`— S3 prefix structure.
+4. `04-gold-layer.png`— S3 prefix structure.
+5. `05-aurora-serverless-v2.png` — infrastructure deployment / RDS cluster.
+6. `06-aurora-serverless-v2-query.png` — source table counts.
+7. `07-glue-job-runs.png` — Glue jobs runs.
+8. `08-eventbridge-scheduler.png` — daily 20:05, `America/Lima`.
+9. `09-billing.png` — total cost.
 
-Example insertion after saving an image:
-
-```markdown
-![Successful CommerceFlow state machine](docs/images/01-step-functions-execution.png)
-```
 
 ---
 
